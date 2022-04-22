@@ -1,0 +1,539 @@
+---
+title: "Exploration of Seattle's Building Permits"
+author: "Huong Ngo"
+date: "02-02-2022"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include = FALSE}
+library(tidyverse)
+library(ggplot2)
+
+building_permits_data <- read_csv("https://raw.githubusercontent.com/svteichman/STAT302-WIN2022/main/files/projects/01_data-visualization/Building_Permits_Clean.csv")
+```
+
+```{r data_setup, echo=FALSE}
+# Creating a new column to contain IssuedYear values that are converted from numeric to factor type
+building_permits_data <- building_permits_data %>%
+  mutate(IssuedYear_Factor = as.factor(IssuedYear))
+# Creating a new column to contain CouncilDistrict values that are converted from numeric to factor type
+building_permits_data <- building_permits_data %>%
+  mutate(CouncilDistrict_Factor = as.factor(CouncilDistrict))
+```
+
+### Introduction
+
+In this report, I try and answer the question of how COVID-19 has affected the activity of permit   issuance in Seattle by looking at different aspects of the permits across different years (before and after COVID), months in non-COVID and COVID years and locations (7 council districts). To answer that question, I utilized the dataset on building permits from the City of Seattle from 2017 to 2021. This dataset has information on all the residential and non-residential permits in Seattle, along with when they were issued, where they were reported from, the related status of the permit, the type of operation entailing the permit, the project cost and many more variables that help give a big picture on how the activity of permits issuance have changed since the pandemic started. 
+
+### How were the number of residential and non-residential permits affected by COVID-19 in Seattle?
+
+Looking at the **Figure 1**, it is apparent that the number of both non-residential and residential permits have decreased significantly from pre-pandemic years *(2017, 2018, 2019) to 2020 and 2021*. Moreover, the number of both permits continue to decrease from *2020 to 2021*, but the decrease is not as significant as *from 2019 to 2020* To have a better understanding about what is happening in these notable years, we can turn our attention to **Figure 2**. Even though **Figure 1** tells us that the total number of residential permits have decreased significantly since the beginning of the pandemic, there has been increases in the number of permits at certain month periods in both *2020 and 2021*. For instance in 2020, we can see that there is an increase between *April and July of 2020* and the number of permits from that month until the end of the year don't go below the lowest number of permits reached in *2020 (April)*. Another instance in 2021, there is a sharp increase between *February and March of 2021*. We can also take note that the number of permits between *March and August of 2021* are higher than the numbers in the same months of 2020. All of these increases could reflect the state of the pandemic on society. For instance, the introduction of vaccines or the relaxing of mandates due to the health situation improving could contribute to those periods of number of permits increasing or reaching/exceeding numbers that were seen pre-COVID. Likewise, we see that the number of permits sharply decrease from *September to October of 2021* and this could likely reflect the outbreak of the Delta variant. Referring to **Figure 3**, another interesting to note is that this pattern is similar for non-residential permits, but the number of permits in *2020 and 2021* never reach or exceed the numbers seen in 2019. This tells us that compared to residential permits (concerning families and individuals), non-residential permits which concern institutions and businesses could have been more risky to apply for because their projects depend on the activity of individuals and families whereas the pandemic was limiting movement of people. 
+
+```{r, echo = FALSE}
+# Creating data frame to house number of permits (observations) for residential and non-residential permit classes
+# respectively for each month and year.
+permit_class_mapped_count <- building_permits_data %>%
+  filter(PermitClassMapped %in% c("Residential", "Non-Residential")) %>%
+  group_by(IssuedYear_Factor, IssuedMth) %>%
+  count(PermitClassMapped, name = "Count")
+```
+
+```{r, fig.align = 'center', fig.width = 10, echo = FALSE}
+# Figure 1
+# Number of Residential and Non-Residential Permits in Each Year (Grouped by permit class)
+ggplot(data = building_permits_data %>% 
+         filter(PermitClassMapped != "N/A"), 
+       aes(x = IssuedYear_Factor, 
+           fill = PermitClassMapped)) +
+  geom_bar(position = "dodge") +
+  labs(title = "Number of Residential and Non-Residential Permits in Each Year",
+       subtitle = "Grouped by permit class mapped",
+       caption = "Figure 1: Total number of residential (left, blue) and non-residential (right, red) permits in years 2017, 2018, 2019, 2020, 2021",
+       y = "Number of Permits",
+       x = "Year",
+       fill = "Permit Class Mapped") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, fig.align = 'center', fig.width = 10, echo = FALSE}
+# Figure 2
+# Number of Residential Permits in Each Month (Grouped by year)
+ggplot(data = permit_class_mapped_count %>% 
+         filter(PermitClassMapped == "Residential", IssuedYear_Factor %in% c(2019, 2020, 2021)), 
+       aes(x = IssuedMth, 
+           y = Count, 
+           group = IssuedYear_Factor, 
+           color = IssuedYear_Factor)) +
+  geom_line() +
+  labs(title = "Number of Residential Permits in Each Month", 
+       subtitle = "Grouped by year",
+       caption = "Figure 2: Number of residential permits in each for years 2019 (red), 2020 (green), 2021 (blue)",
+       x = "Month",
+       y = "Number of Residential Permits",
+       color = "Issued Year") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  scale_x_continuous(n.breaks = 10)
+```
+
+```{r, fig.align = 'center', fig.width = 10, echo = FALSE}
+# Figure 3
+# Number of Non-Residential Permits in Each Month (Grouped by year)
+ggplot(data = permit_class_mapped_count %>% 
+         filter(PermitClassMapped == "Non-Residential", IssuedYear_Factor %in% c(2019, 2020, 2021)), 
+       aes(x = IssuedMth, 
+           y = Count, 
+           group = IssuedYear_Factor, 
+           color = IssuedYear_Factor)) +
+  geom_line() +
+  labs(title = "Number of Non-Residential Permits in Each Month", 
+       subtitle = "Grouped by year",
+       caption = "Figure 3: Number of non-residential permits in each month for years 2019 (red), 2020 (green), 2021 (blue)",
+       x = "Month",
+       y = "Number of Non-Residential Permits",
+       color = "Issued Year") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  scale_x_continuous(n.breaks = 10)
+```
+
+### How were the number of residential and non-residential permits affected by COVID-19 across different council districts of Seattle?
+
+Referring to **Figure 4**, we can see that the number of residential and non-residential permits decrease from *2019 to 2020* across all council districts, though there isn't a significant change in the numbers from *2020 to 2021*. An interesting point we can note is that *council district 6* has the largest number of residential permits regardless of whether it was recorded during the pandemic or not. Additionally, *council district 7* manages to have a relatively equal ratio of non-residential and residential permits even before and during the pandemic. This can be attributed to the nature of the areas that the council district represents. For instance, *council district 6* might have a lot of suburban neighborhoods while *council district 7* accommodates for an equal number of people living there and working there. **Figure 5** represents the same interpretation in a different manner to display the decreasing trend in the number of non-residential and residential permits before and during COVID.
+
+```{r, fig.align = 'center', fig.width = 17, fig.height = 12, echo = FALSE}
+# Figure 4
+# Number of Residential and Non-Residential Permits in Each Council District (Faceted by year, grouped by permit class mapped)
+ggplot(data = building_permits_data %>% 
+         filter(IssuedYear_Factor %in% c(2019, 2020, 2021), !is.na(CouncilDistrict_Factor)), 
+       aes(x = CouncilDistrict_Factor,
+           fill = PermitClassMapped)) +
+  geom_bar(position = "dodge") +
+  facet_grid(rows = vars(IssuedYear_Factor)) +
+  labs(title = "Number of Residential and Non-Residential Permits in Each Council District",
+       subtitle = "Faceted by year, grouped by permit class mapped",
+       caption = "Figure 4: Number of residential (right, blue) and non-residential (left, red) permits in all 7 council districts and faceted by years 2019, 2020, 2021", 
+       y = "Number of Permits",
+       x = "Council District", 
+       fill = "Permit Class Mapped") +
+  theme_bw(base_size = 23) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.1),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, fig.align = 'center', fig.width = 15, fig.height = 10, echo = FALSE}
+# Figure 5
+# Number of Residential and Non-Residential Permits in Each Year (Faceted by council district, grouped by permit class mapped)
+ggplot(data = building_permits_data %>%
+         filter(IssuedYear_Factor %in% c(2019, 2020, 2021), 
+                PermitClassMapped != "N/A", 
+                !is.na(CouncilDistrict_Factor)), 
+       aes(x = IssuedYear, 
+           fill = PermitClassMapped)) +
+  geom_bar(position = "dodge") +
+  facet_wrap(vars(CouncilDistrict_Factor), scales = "free_x") +
+  labs(title = "Number of Residential and Non-Residential Permits in Each Year",
+       subtitle = "Faceted by council district, grouped by permit class mapped",
+       caption = "Figure 5: Number of residential (right, blue) and non-residential (left, pink) permits in years 2019, 2020, 2021, faceted by all 7 council districts",
+       y = "Number of Permits",
+       x = "Year", 
+       fill = "Permit Class Mapped") +
+  theme_bw(base_size = 20) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.2),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+### How were the status of permits affected by COVID-19?
+
+**Figure 6** tells us interesting points about the statuses of the permits across different years (before and during COVID). To start off, the first line plot tells us that the number of permits with the *status of "Completed"*, which we can interpret as the work associated with the permit having been completed in a particular month and year, decreases sharply from *2019 onwards*. This tells us that perhaps the pandemic slowed down the activity of completing projects and could contribute to the sharp decline. The permits with the *"Withdrawn" status*, which we can interpret as permits that have just been withdrawn in a particular month and year, don't seem to change much before and during COVID years. However, the more interesting part is that the number of permits with the *status "Issued"*, which we can interpret as permits that have just been issued in a particular month and year, increases significantly from *2019 and through the pandemic*. There are different factors that can explain why this is happening, but **Figure 7** might give us a clue as to why. Referring to it, we can see that a large portion of permits with the *"Issued" status* are attributed to residential buildings that are going to go through additions/alterations. Another large portion is that there are new residential buildings to be built. One explanation could be that more people are moving now to be closer to their family or to settle down somewhere they've always wanted to live in case the pandemic stretches on and prevents them to make such plans further in time. And thus, there are permits being issued to accommodate for that demand. This is just one explanation, and there could be more plausible explanations that should be looked into.
+
+```{r, echo = FALSE}
+# Creating a data frame to store the number of permits that have statuses: Completed, Withdrawn and Issued by year
+status_current_year <- building_permits_data %>%
+  # Filtering by status of the permit 
+  filter(StatusCurrent %in% c("Completed", "Withdrawn", "Issued")) %>%
+  # Grouping by year
+  group_by(IssuedYear) %>%
+  # Counting number observations with status that meets the filtering condition
+  count(StatusCurrent, name = "Count")
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 6, echo = FALSE}
+# Figure 6
+# Number of Permits in Each Year (Faceted by current status of permit)
+ggplot(data = status_current_year, 
+       aes(x = IssuedYear, 
+           y = Count)) +
+  geom_line() +
+  facet_wrap(vars(StatusCurrent)) +
+  labs(title = "Number of Permits in Each Year",
+       subtitle = "Faceted by current status of permit",
+       caption = "Figure 6: Number of permits in years 2017, 2018, 2019, 2020, 2021, faceted by 3 permit statuses (Completed, Issued, Withdrawn).",
+       y = "Number of Permits",
+       x = "Year") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+        panel.spacing.x = unit(0.75, "cm"))
+```
+
+```{r, echo = FALSE}
+# Creating a data frame to store the number of permits that have the permit type descriptions: Addition/Alteration, Demolition, New. Grouped by year and permit class mapped.
+issued_buildings_operations <- building_permits_data %>%
+  # Filtering by status of permit, year and permit type description
+  filter(StatusCurrent == "Issued", 
+         IssuedYear_Factor %in% c(2020, 2021),
+         PermitTypeDesc %in% c("Addition/Alteration", "Demolition", "New")) %>%
+  # Grouping by year and permit class mapped
+  group_by(IssuedYear_Factor, PermitClassMapped) %>%
+  # Counting number of observations that satisfy the permit type description filter
+  count(PermitTypeDesc, name = "Count")
+```
+
+```{r, fig.align = 'center', fig.width = 12, fig.height = 8, echo = FALSE}
+# Figure 7
+# Number of Residential and Non-Residential Permits with 'Issued' Status (Faceted by year)
+ggplot(data = issued_buildings_operations,
+       aes(x = PermitTypeDesc,
+           y = Count,
+           fill = PermitClassMapped)) +
+  geom_col(position = "dodge") +
+  facet_grid(rows = vars(IssuedYear_Factor)) +
+    labs(title = "Number of Residential and Non-Residential Permits with 'Issued' Status",
+       subtitle = "Faceted by year",
+       caption = "Figure 7: Number of residential (left, blue) and non-residential (right, pink) permits with issued status associated 
+       with an operation (Addition/Alteration, Demolition, New), faceted by years 2020, 2021",
+       y = "Number of Permits",
+       x = "Operation (Permit Type Description)",
+       fill = "Permit Class Mapped") +
+  theme_bw(base_size = 15) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+
+### What was the trend of housing units removal and addition pre-COVID (2019) and during COVID (2020, 2021)?
+
+Looking at **Figure 8**, there is a clear difference in the number of housing units being added and removed each year. Surprisingly, the number of housing units added increases from *2019 and 2020*. This does agree with the previous behavior we recognized in the number of permits being issued in *2020 and 2021* increasing *from 2019* that goes to addition/alterations to residential buildings or building new residential buildings. Another thing to note is that the number of housing units removed increases from *2019 to 2020*, but decreases *from 2020 to 2021*, and the number in *2021 is lower than 2019's number*. To look at this activity in more detail, we turn our attention to **Figure 9**. Here, we can see in detail the changes in the number of housing units being added and removed across months of the 3 years *(before and during COVID)*. An important thing we can note is that there is a sharp increase in number of housing units (or to be) added from *July to August 2021*. A case that can explain this is that more people started getting vaccines and have already planned their moving ahead during the summer so they wouldn't have to move during the cold winter. This also happens in *2020*, between *August and October*, but it is probably more because of relaxed mandates since vaccines weren't widespread until the end of 2020 and beginning of 2021. Another thing we can see is the sharp decline from *August to September* and a continued decline onwards in *2021*. This could reflect the spread of the Delta variant of COVID-19 when mandates became stricter again. 
+
+```{r, message = FALSE, echo = FALSE}
+# Creating a data frame to store the respective total number of housing units that is planned to be added or removed/already added or removed for all years 2017, 2018, 2019, 2020, 2021.
+housing_units_activity_year <- building_permits_data %>%
+  # Filtering out all NA values of HousingUnitsAdded and HousingUnitsRemoved
+  filter(!is.na(HousingUnitsAdded),
+         !is.na(HousingUnitsRemoved)) %>%
+  # Grouping by year
+  group_by(IssuedYear) %>%
+  # Calculating the total number of housing units added and housing units removed
+  summarize(hua_sum = sum(HousingUnitsAdded),
+            hur_sum = sum(HousingUnitsRemoved))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 6, echo = FALSE}
+# Figure 8
+# Number of Housing Units Added or Removed in Each Year (Grouped by housing unit activity)
+colors <- c("Housing Units Added" = "red", "Housing Units Removed" = "blue")
+ggplot(data = housing_units_activity_year, aes(x = IssuedYear)) +
+  geom_line(aes(y = hua_sum, color = "Housing Units Added")) +
+  geom_line(aes(y = hur_sum, color = "Housing Units Removed")) +
+  labs(title = "Number of Housing Units Added or Removed in Each Year",
+       subtitle = "Grouped by housing unit activity",
+       caption = "Figure 8: Number of housing units added (red) and removed (blue) in years 2017, 2018, 2019, 2020, 2021",
+       y = "Number of Housing Units",
+       x = "Year",
+       color = "Housing Unit Activity") +
+  scale_color_manual(values = colors) +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, message = FALSE, echo = FALSE}
+# Creating a data frame to store the respective total number of housing units that is added and removed in each month for all years 2019, 2020, 2021.
+housing_units_activity_month <- building_permits_data %>%
+  # Filtering by year, and filtering out all NA values of HousingUnitsAdded and HousingUnitsRemoved
+  filter(IssuedYear_Factor %in% c(2019, 2020, 2021),
+         !is.na(HousingUnitsAdded),
+         !is.na(HousingUnitsRemoved)) %>%
+  # Grouping by year and month
+  group_by(IssuedYear_Factor, IssuedMth) %>%
+  # Calculating the total number of housing units added and housing units removed
+  summarize(hua_sum = sum(HousingUnitsAdded),
+            hur_sum = sum(HousingUnitsRemoved))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 7, echo = FALSE}
+# Figure 9
+# Number of Housing Units Being Added or Removed in Each Month (Faceted by year, grouped by activity of housing units)
+colors <- c("Housing Units Added" = "red", "Housing Units Removed" = "blue")
+
+ggplot(data = housing_units_activity_month, aes(x = IssuedMth)) +
+  geom_line(aes(y = hua_sum, color = "Housing Units Added")) +
+  geom_line(aes(y = hur_sum, color = "Housing Units Removed")) +
+  labs(title = "Number of Housing Units Being Added or Removed in Each Month", 
+       subtitle = "Faceted by year, grouped by activity of housing units",
+       caption = "Figure 9: Number of housing units removed (blue) or added (red) each month in years 2019, 2020, 2021",
+       x = "Month",
+       y = "Number of Housing Units",
+       color = "Housing Unit Activity") +
+  scale_color_manual(values = colors) +
+  facet_grid(rows = vars(IssuedYear_Factor)) +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  scale_x_continuous(n.breaks = 10)
+```
+
+### What was the trend of housing units removal and addition pre-COVID (2019) and during COVID (2020, 2021) in different council districts of Seattle?
+
+Here, **Figure 10 and 11** shows us the trend of housing units addition and removal between *2020 and 2021* across different council districts. Let's take a look at **Figure 10** to gain a better understand of why there was an increase in housing units being added from *2020 to 2021* in Seattle. The most important takeaway from this graph is that *council district 7* seems to have the largest number of housing units added in *2021*, and even the increase from *2020 and 2021* is significant. Although there are other *districts (5, 6)* that also experience an increase in the number of housing units added in *2021*, it is clear the *council district 7* is the biggest contributor to the high numbers we see in *2021* in **Figure 10**. Now, looking at **Figure 11**, *council district 6* actually has the largest number of housing units removed in *2021*, and even *council district 7* contributes a fair amount as well. However, the increase in housing units that had been removed only applies to those districts, and because all the other district experience a severe decline in that number, it is apparent why the overall number of permits involving housing units removal decreased from *2020 to 2021*. Comparing what we see here to the previous figure, it seems that *council district 6* has more housing units removal in *2021* than housing units addition, while *council district 7* is the opposite. 
+
+```{r, echo = FALSE, message = FALSE}
+# Creating a data frame to store the respective total number of housing units that is added and removed in for all years 2020, 2021 in all 7 council districts.
+housing_units_location <- building_permits_data %>%
+  # Filtering by year, and filtering out all NA values of HousingUnitsAdded, HousingUnitsRemoved and CouncilDistrict_Factor
+  filter(IssuedYear_Factor %in% c(2020, 2021),
+         !is.na(HousingUnitsAdded),
+         !is.na(HousingUnitsRemoved),
+         !is.na(CouncilDistrict_Factor)) %>%
+  # Grouping by year and council district
+  group_by(IssuedYear_Factor, CouncilDistrict_Factor) %>%
+  # Calculating the total number of housing units added and housing units removed
+  summarize(hua_sum = sum(HousingUnitsAdded),
+            hur_sum = sum(HousingUnitsRemoved))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 6, echo = FALSE}
+# Figure 10
+# Number of Housing Units Added in Each Council District (Grouped by year)
+ggplot(data = housing_units_location,
+       aes(x = CouncilDistrict_Factor,
+           y = hua_sum,
+           fill = IssuedYear_Factor)) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of Housing Units Added in Each Council District",
+       subtitle = "Grouped by year",
+       caption = "Figure 10: Number of housing units added each month in years 2020 (left, pink), 2021 (right, blue)",
+       x = "Council District",
+       y = "Number of Housing Units",
+       fill = "Issued Year") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 6, echo = FALSE}
+# Figure 11
+# Number of Housing Units Removed in Each Council District (Grouped by year)
+ggplot(data = housing_units_location,
+       aes(x = CouncilDistrict_Factor,
+           y = hur_sum,
+           fill = IssuedYear_Factor)) +
+  geom_col(position = "dodge") +
+  labs(title = "Number of Housing Units Removed in Each Council District",
+       subtitle = "Grouped by year",
+       caption = "Figure 11: Number of housing units added each month in years 2020 (left, pink), 2021 (right, blue)",
+       x = "Council District",
+       y = "Number of Housing Units",
+       fill = "Issued Year") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+### What was the distribution in project cost pre-COVID (2017, 2018, 2019) and during COVID (2020, 2021)?
+
+*Please take note that the plots use log-transformed estimated project costs because the data was extremely skewed and would cause the plot to be extremely difficult to understand. Log-transform allows us to change the scale of the cost while retaining the order of the values.*
+
+**Figure 12** shows us the distribution of estimated project costs (except projects costing $0) in each year that is available in the dataset. An interesting point here is that even under circumstances of the pandemic, the shape of the distribution of the estimated project cost is *consistently unimodal and has a bell-curve shape*, suggesting a normal distribution. The median also stays consistent no matter the year, which is also interesting because one would expect the median of the estimated project cost to be lower or the distribution to be more right-skewed during pandemic years (lower total estimated project costs for pandemic years). We can refer to **Figure 13** and **the table of median and Interquartile Range (IQR) values for estimated project costs** to confirm that the median and variation across different years don't differ that much. Specifically, it shows that the values are relatively close to each other, particularly ranging between *56,000 and 75,000* and that the IQR values ranges between *210,000 and 290,000* across the years. Taking a deeper look in this, we can look at **Figure 14** which showcases the distribution of estimated project costs in each year, but they are also divided into residential and non-residential projects. While the distribution of estimated project costs for non-residential projects each year have a unimodal shape and is like a bell-curve, the distribution of estimated projects costs for residential projects actually have a bi-modal shape which means they might not be normally distributed like non-residential projects. **Figure 15**, the **table of median and IQR values for estimated project costs** allows us to see their differences in average and variation of estimated project costs. Though it is not as apparent on the boxplot, the table shows that the median and variation in the project costs cover different ranges of values.
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 7, warning = FALSE, echo = FALSE}
+# Figure 12
+# Distribution of Log-Transformed Estimated Project Cost (Distribution of Log-Transformed Estimated Project Cost)
+ggplot(data = building_permits_data,
+       aes(x = log10(EstProjectCost))) +
+  geom_histogram(binwidth = 0.3) +
+  facet_grid(rows = vars(IssuedYear_Factor)) +
+  labs(title = "Distribution of Log-Transformed Estimated Project Cost",
+       subtitle = "Faceted by year",
+       caption = "Figure 12: Distribution of log-transformed estimated project costs across years 2017, 2018, 2019, 2020, 2021",
+       x = "Log-Transformed Estimated Project Cost",
+       y = "Count") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 6, warning = FALSE, echo = FALSE}
+# Figure 13
+# Distribution of Log-Transformed Estimated Project Cost (For each year)
+ggplot(data = building_permits_data %>%
+         filter(!is.na(EstProjectCost)),
+       aes(x = log10(EstProjectCost), y = IssuedYear_Factor)) +
+  geom_boxplot() +
+  labs(title = "Distribution of Log-Transformed Estimated Project Cost",
+       subtitle = "For each year",
+       caption = "Figure 13: Distribution of log-transformed estimated project costs for years 2017, 2018, 2019, 2020, 2021",
+       x = "Log-Transformed Estimated Project Cost",
+       y = "Year") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, warning = FALSE, echo = FALSE}
+# Creating a table that prints the median and interquartile range values for estimated project costs for all years 2017, 2018, 2019, 2020, 2021
+building_permits_data %>%
+  # Filtering out all estimated project costs with value 0
+  filter(EstProjectCost != 0) %>%
+  # Grouping by year
+  group_by(IssuedYear) %>%
+  # Calculating median and IQR values for estimated project costs
+  summarize(median_est_cost = median(EstProjectCost),
+            iqr_est_cost = IQR(EstProjectCost))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 7, warning = FALSE, echo = FALSE}
+# Figure 14
+# Distribution of Log-Transformed Estimated Project Cost (Faceted by year and permit class mapped)
+ggplot(data = building_permits_data %>%
+         filter(PermitClassMapped != "N/A",
+                !is.na(EstProjectCost)),
+       aes(x = log10(EstProjectCost))) +
+  geom_histogram(binwidth = 0.4) +
+  facet_grid(IssuedYear_Factor ~ PermitClassMapped) +
+  labs(title = "Distribution of Log-Transformed Estimated Project Cost",
+       subtitle = "Faceted by year and permit class mapped",
+       caption = "Figure 14: Distribution of log-transformed estimated project costs for residential and non-residential projects in years 2017, 2018, 2019, 2020, 2021",
+       x = "Log-Transformed Estimated Project Cost",
+       y = "Count") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, fig.align = 'center', fig.width = 20, fig.height = 14, warning = FALSE, echo = FALSE}
+# Figure 15
+# Distribution of Log-Transformed Estimated Project Cost (For each year, faceted by permit class mapped)
+ggplot(data = building_permits_data %>%
+         filter(PermitClassMapped != "N/A",
+                !is.na(EstProjectCost)),
+       aes(x = log10(EstProjectCost), y = IssuedYear_Factor)) +
+  geom_boxplot() +
+  facet_grid(cols = vars(PermitClassMapped)) +
+  labs(title = "Distribution of Log-Transformed Estimated Project Cost",
+       subtitle = "For each year, faceted by permit class mapped",
+       caption = "Figure 15: Distribution of log-transformed estimated project costs for residential and non-residential projects in years 
+       2017, 2018, 2019, 2020, 2021, faceted by permit class mapped",
+       x = "Log-Transformed Estimated Project Cost",
+       y = "Year") +
+  theme_bw(base_size = 25) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, message = FALSE, echo = FALSE}
+# Creating a table that prints the median and interquartile range values for estimated project costs for residential and non-residential permits respectively for all years 2017, 2018, 2019, 2020, 2021
+building_permits_data %>%
+  # Filtering out all estimated project costs with value 0 and NA values of PermitClassMapped
+  filter(EstProjectCost != 0,
+         PermitClassMapped != "N/A") %>%
+  # Grouping by year and permit class mapped
+  group_by(PermitClassMapped, IssuedYear) %>%
+  # Calculating median and IQR values for estimated project costs
+  summarize(median_est_cost = median(EstProjectCost),
+            iqr_est_cost = IQR(EstProjectCost))
+```
+
+### What was the average project cost pre-COVID (2017, 2018, 2019) and during COVID (2020, 2021)?
+
+*Please take note that the plots use log-transformed estimated project costs because the data was extremely skewed and would cause the plot to be extremely difficult to understand. Log-transform allows us to change the scale of the cost while retaining the order of the values.*
+
+Looking at **Figure 16**, since *2019*, there has been an increase in average project costs even until *2021*. To better understand why this might be happening, we can take a look closely at the trend in average project costs over the span of 12 months in *2019, 2020 and 2021* in **Figure 17**. First thing we can note is that consistently through out *2020 and 2021*, the average estimated project costs always stays above *2019* numbers. This is interesting because it could be related to the increase in permits with the *"Issued" status* from *2019* onwards. Another thing we can take note of is the gradual increase in average estimated project costs from *February to May of 2020*. This is another interesting point because this was still the beginning of the pandemic and the number of cases were increasing from that point. Perhaps one explanation could be that people were trying to apply for as many permits as they could before the economy got any worse, in the case that estimated project cost is a factor that plays into whether a permit gets issued or rejected. There are many other explanations, and it should be further explored. 
+
+```{r, echo = FALSE, message = FALSE}
+# Creating a data frame that stores the average estimate project costs for all years 2017, 2018, 2019, 2020, 2021
+average_cost_yearly <- building_permits_data %>%
+  # Filtering out NA values of EstProjectCost
+  filter(!is.na(EstProjectCost)) %>%
+  # Grouping by year
+  group_by(IssuedYear) %>%
+  # Calculating median values for estimated project costs
+  summarize(median_cost = median(EstProjectCost))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 6, echo = FALSE, message = FALSE}
+# Figure 16
+# Average (median) estimated project costs in years 2017, 2018, 2019, 2020, 2021
+ggplot(data = average_cost_yearly,
+       aes(x = IssuedYear,
+           y = median_cost)) +
+  geom_line() +
+  labs(title = "Average (Median) Estimated Project Cost for Each Year",
+       caption = "Figure 16: Average (median) estimated project costs in years 2017, 2018, 2019, 2020, 2021",
+       x = "Year",
+       y = "Average (median) estimated project cost") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5))
+```
+
+```{r, echo = FALSE, message = FALSE}
+# Creating a data frame that stores the average estimate project costs in each month for all years 2019, 2020, 2021
+average_cost_monthly <- building_permits_data %>%
+  # Filtering by year and filtering out NA values of EstProjectCost
+  filter(!is.na(EstProjectCost),
+         IssuedYear_Factor %in% c(2019, 2020, 2021)) %>%
+  # Grouping by year and month
+  group_by(IssuedYear_Factor, IssuedMth) %>%
+  # Calculating median values for estimated project costs
+  summarize(median_cost = median(EstProjectCost))
+```
+
+```{r, fig.align = 'center', fig.width = 10, fig.height = 6, echo = FALSE}
+# Figure 17
+# Average (Median) Estimated Project Cost for Each Month in 2019, 2020, 2021
+ggplot(data = average_cost_monthly,
+       aes(x = IssuedMth, 
+           y = median_cost, 
+           group = IssuedYear_Factor,
+           color = IssuedYear_Factor)) +
+  geom_line() +
+  labs(title = "Average (Median) Estimated Project Cost for Each Month in 2019, 2020, 2021",
+       caption = "Figure 17: Average (median) estimated project costs in each month for years 2019, 2020, 2021",
+       x = "Month",
+       y = "Average (median) estimated project cost",
+       color = "Issued Year") +
+  theme_bw(base_size = 13) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"),
+        plot.caption = element_text(hjust = 0.5),
+        plot.subtitle = element_text(hjust = 0.5)) +
+  scale_x_continuous(n.breaks = 10)
+```
+
+### Conclusion
+
+Through this investigation, I was able to discover many interesting points about the trends of building permits that reflected the nature of the pandemic. The first main takeaway was that the number of residential and non-residential permits during the pandemic is much lower than pre-pandemic times and that this is happening across different council districts. However, the number of permits with the status of "Issued" increase drastically from 2019 and 2020 to 2021. There are numerous reasons that could explain why this is happening and should be further explored. Another interesting takeaway is that the number of permits in 2021 involving housing units added/to be added is much higher than 2019 and 2020. We also saw that there were specific neighborhoods that contributed to this increase. Another takeaway that is quite notable is that the distribution of estimated project costs across different years, even before and after COVID, don't differ by a huge gap and their variation (measured by the IQR) and median estimated project costs across different years support that. Lastly, we can see that there is an interesting trend in average estimated project costs where there is an increase from 2019 and onwards. All of these aspects require further exploration to better understand why certain changes occur within this strange time. Overall, it seems that the pandemic is quite unpredictable in its effects on the activity of building permits in Seattle and that we should continue to monitor to learn more about how our community is adapting to the rapid changes that happens in a pandemic.
