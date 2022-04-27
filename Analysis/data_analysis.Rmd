@@ -25,7 +25,7 @@ building_permits_data <- building_permits_data %>%
 
 ### Introduction
 
-In this report, I try and answer the question of how COVID-19 has affected the activity of permit   issuance in Seattle by looking at different aspects of the permits across different years (before and after COVID), months in non-COVID and COVID years and locations (7 council districts). To answer that question, I utilized the dataset on building permits from the City of Seattle from 2017 to 2021. This dataset has information on all the residential and non-residential permits in Seattle, along with when they were issued, where they were reported from, the related status of the permit, the type of operation entailing the permit, the project cost and many more variables that help give a big picture on how the activity of permits issuance have changed since the pandemic started. 
+In this report, I try and answer the question of how COVID-19 has affected the activity of permit issuance in Seattle by looking at different aspects of the permits across different years (before and after COVID), months in non-COVID and COVID years and locations (7 council districts). To answer that question, I utilized the dataset on building permits from the City of Seattle from 2017 to 2021. This dataset has information on all the residential and non-residential permits in Seattle, along with when they were issued, where they were reported from, the related status of the permit, the type of operation entailing the permit, the project cost and many more variables that help give a big picture on how the activity of permits issuance have changed since the pandemic started. 
 
 ### How were the number of residential and non-residential permits affected by COVID-19 in Seattle?
 
